@@ -70,7 +70,7 @@ class BetaGeoFitter(BaseFitter):
     def fit(
         self, 
         frequency, 
-        recency, 
+        recency,
         T, 
         weights=None, 
         initial_params=None, 
@@ -232,24 +232,25 @@ class BetaGeoFitter(BaseFitter):
         Pareto/NBD Model," Marketing Science, 24 (2), 275-84.
         """
 
-        x = frequency
         r, alpha, a, b = self._unload_params("r", "alpha", "a", "b")
 
-        _a = r + x
-        _b = b + x
-        _c = a + b + x - 1
-        _z = t / (alpha + T + t)
-        ln_hyp_term = np.log(hyp2f1(_a, _b, _c, _z))
-
-        # if the value is inf, we are using a different but equivalent
-        # formula to compute the function evaluation.
-        ln_hyp_term_alt = np.log(hyp2f1(_c - _a, _c - _b, _c, _z)) + (_c - _a - _b) * np.log(1 - _z)
-        ln_hyp_term = np.where(np.isinf(ln_hyp_term), ln_hyp_term_alt, ln_hyp_term)
-        first_term = (a + b + x - 1) / (a - 1)
-        second_term = 1 - np.exp(ln_hyp_term + (r + x) * np.log((alpha + T) / (alpha + t + T)))
-
-        numerator = first_term * second_term
-        denominator = 1 + (x > 0) * (a / (b + x - 1)) * ((alpha + T) / (alpha + recency)) ** (r + x)
+        numerator = (
+            1
+            - ((alpha + T) / (alpha + T + t)) ** (r + frequency)
+            * hyp2f1(
+                r + frequency,
+                b + frequency,
+                a + b + frequency - 1,
+                t / (alpha + T + t),
+            )
+        )
+        numerator *= (a + b + frequency - 1) / (a - 1)
+        denominator = (
+            1
+            + (frequency > 0)
+            * (a / (b + frequency - 1))
+            * ((alpha + T) / (alpha + recency)) ** (r + frequency)
+        )
 
         return numerator / denominator
 
