@@ -243,10 +243,9 @@ class BetaGeoFitter(BaseFitter):
         first_term = (a + b + frequency - 1) / (a - 1)
         second_term = 1 - ((alpha + T) / (alpha + T + t)) ** (r + frequency) * hyp_term
 
-        # change the second term if the hypergeometric term becomes infinite
+        # replace the second term if the hyper geometric term becomes infinite
         hyp_term_alt = (
-                np.log(hyp2f1(_c - _a, _c - _b, _c, _z)) + (_c - _a - _b) * np.log(
-            1 - _z)
+            np.log(hyp2f1(_c - _a, _c - _b, _c, _z)) + (_c - _a - _b) * np.log(1 - _z)
         )
         second_term_alt = 1 - np.exp(
             hyp_term_alt + np.log((alpha + T) / (alpha + t + T)) * (r + frequency)
@@ -255,10 +254,10 @@ class BetaGeoFitter(BaseFitter):
 
         numerator = first_term * second_term
         denominator = (
-                1
-                + (frequency > 0) *
-                (a / (b + frequency - 1)) *
-                ((alpha + T) / (alpha + recency)) ** (r + frequency)
+            1
+            + (frequency > 0) *
+            (a / (b + frequency - 1)) *
+            ((alpha + T) / (alpha + recency)) ** (r + frequency)
         )
         return numerator / denominator
 
