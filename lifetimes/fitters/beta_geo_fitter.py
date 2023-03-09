@@ -234,24 +234,31 @@ class BetaGeoFitter(BaseFitter):
 
         r, alpha, a, b = self._unload_params("r", "alpha", "a", "b")
 
-        numerator = (
-            1
-            - ((alpha + T) / (alpha + T + t)) ** (r + frequency)
-            * hyp2f1(
-                r + frequency,
-                b + frequency,
-                a + b + frequency - 1,
-                t / (alpha + T + t),
-            )
+        _a = r + frequency
+        _b = b + frequency
+        _c = a + b + frequency - 1
+        _z = t / (alpha + T + t)
+
+        hyp_term = hyp2f1(_a, _b, _c, _z)
+        first_term = (a + b + frequency - 1) / (a - 1)
+        second_term = 1 - ((alpha + T) / (alpha + T + t)) ** (r + frequency) * hyp_term
+
+        # replace the second term if the hyper geometric term becomes infinite
+        hyp_term_alt = (
+            np.log(hyp2f1(_c - _a, _c - _b, _c, _z)) + (_c - _a - _b) * np.log(1 - _z)
         )
-        numerator *= (a + b + frequency - 1) / (a - 1)
+        second_term_alt = 1 - np.exp(
+            hyp_term_alt + np.log((alpha + T) / (alpha + t + T)) * (r + frequency)
+        )
+        second_term = np.where(np.isinf(hyp_term), second_term_alt, second_term)
+
+        numerator = first_term * second_term
         denominator = (
             1
-            + (frequency > 0)
-            * (a / (b + frequency - 1))
-            * ((alpha + T) / (alpha + recency)) ** (r + frequency)
+            + (frequency > 0) *
+            (a / (b + frequency - 1)) *
+            ((alpha + T) / (alpha + recency)) ** (r + frequency)
         )
-
         return numerator / denominator
 
     def conditional_probability_alive(
